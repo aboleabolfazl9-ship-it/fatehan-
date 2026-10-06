@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سامانه مدیریت مدرسه فاتحان آینده</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode">
+
+    <!-- صفحه ورود -->
+    <div id="auth-screen" class="auth-container">
+        <div class="auth-box">
+            <div class="auth-logo">🏫</div>
+            <h1 class="auth-title">مدرسه فاتحان آینده</h1>
+            <p class="auth-subtitle">سامانه هوشمند مدیریت و رتبه‌بندی دانش‌آموزان</p>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuth('login')">ورود به سیستم</button>
+                <button class="auth-tab" onclick="switchAuth('register')">ثبت‌نام جدید</button>
+            </div>
+
+            <div id="login-form" class="auth-form">
+                <div class="input-group">
+                    <label>شماره موبایل</label>
+                    <input type="tel" id="login-phone" placeholder="09123456789">
+                </div>
+                <div class="input-group">
+                    <label>رمز عبور</label>
+                    <input type="password" id="login-pass" placeholder="رمز عبور خود را وارد کنید">
+                </div>
+                <button class="btn-giant btn-primary" onclick="loginUser()">ورود به برنامه 🚀</button>
+            </div>
+
+            <div id="register-form" class="auth-form hidden">
+                <div class="input-group">
+                    <label>نام و نام خانوادگی دانش‌آموز</label>
+                    <input type="text" id="reg-name" placeholder="مثال: علی رضایی">
+                </div>
+                <div class="input-group">
+                    <label>شماره موبایل</label>
+                    <input type="tel" id="reg-phone" placeholder="09123456789">
+                </div>
+                <div class="input-group">
+                    <label>رمز عبور</label>
+                    <input type="password" id="reg-pass" placeholder="حداقل ۴ کاراکتر">
+                </div>
+                <div class="input-group">
+                    <label>کلاس تحصیلی</label>
+                    <select id="reg-class">
+                        <option value="">انتخاب کنید...</option>
+                        <option value="هفتم">کلاس هفتم</option>
+                        <option value="هشتم ۱">کلاس هشتم ۱</option>
+                        <option value="هشتم ۲">کلاس هشتم ۲</option>
+                        <option value="نهم ۱">کلاس نهم ۱</option>
+                        <option value="نهم ۲">کلاس نهم ۲</option>
+                    </select>
+                </div>
+                <button class="btn-giant btn-success" onclick="registerUser()">ثبت‌نام در سامانه 📝</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- اپلیکیشن اصلی -->
+    <div id="main-app" class="app-container hidden">
+        
+        <!-- هدر -->
+        <header class="app-header">
+            <div class="header-top">
+                <h2>🏆 مدرسه فاتحان آینده</h2>
+                <span id="user-name-badge" class="badge">👨‍🎓 کاربر: مهمان</span>
+            </div>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="🔍 جستجوی سریع نام دانش‌آموز...">
+            </div>
+        </header>
+
+        <!-- فیلتر کلاس‌ها -->
+        <nav class="class-filters" id="class-filters">
+            <button class="filter-btn active" data-class="all">همه مدرسه</button>
+            <button class="filter-btn" data-class="هفتم">کلاس هفتم</button>
+            <button class="filter-btn" data-class="هشتم ۱">هشتم ۱</button>
+            <button class="filter-btn" data-class="هشتم ۲">هشتم ۲</button>
+            <button class="filter-btn" data-class="نهم ۱">نهم ۱</button>
+            <button class="filter-btn" data-class="نهم ۲">نهم ۲</button>
+        </nav>
+
+        <main class="app-main-content">
+            
+            <!-- ۱. رتبه‌بندی -->
+            <section id="tab-ranking" class="tab-page active-page">
+                <div class="page-header-box">
+                    <h2>🏆 لیگ علمی و انضباطی</h2>
+                    <p>رتبه‌بندی زنده بر اساس امتیازات کسب شده</p>
+                </div>
+                <div id="students-container" class="students-container"></div>
+            </section>
+
+            <!-- ۲. غیبت‌ها -->
+            <section id="tab-attendance" class="tab-page hidden">
+                <h2 class="page-title">📋 گزارش غیبت‌های مدرسه</h2>
+                <div id="my-absences-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </section>
+
+            <!-- ۳. پرونده -->
+            <section id="tab-profile" class="tab-page hidden">
+                <h2 class="page-title">👤 پرونده تحصیلی دانش‌آموز</h2>
+                <div class="profile-card-large">
+                    <div class="profile-avatar">👨‍🎓</div>
+                    <h3 id="prof-name-large">نام دانش‌آموز</h3>
+                    <p id="prof-class-behavior" style="color:var(--text-muted); margin-bottom:15px;">کلاس - وضعیت انضباط</p>
+                    <div class="prof-stats-grid">
+                        <div class="stat-item"><span>امتیاز کل</span><strong id="prof-points">0</strong></div>
+                        <div class="stat-item"><span>رتبه در مدرسه</span><strong id="prof-rank">-</strong></div>
+                        <div class="stat-item"><span>تعداد غیبت</span><strong id="prof-absent">۰</strong></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ۴. قوانین امتیازگیری -->
+            <section id="tab-rules" class="tab-page hidden">
+                <h2 class="page-title">🎯 قوانین امتیاز گیری مدرسه</h2>
+                <div id="rules-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </section>
+
+            <!-- ۵. تنظیمات + پنل ادمین -->
+            <section id="tab-settings" class="tab-page hidden">
+                <h2 class="page-title">⚙️ تنظیمات و پنل مدیریت</h2>
+                
+                <div class="settings-card">
+                    <label class="toggle-row">
+                        <span>🌙 حالت تاریک (Dark Mode)</span>
+                        <input type="checkbox" id="theme-toggle" onchange="toggleTheme()" style="width:20px; height:20px; cursor:pointer;">
+                    </label>
+                </div>
+
+                <!-- دکمه ورود مدیر -->
+                <div class="settings-card" id="admin-login-section" style="background:transparent; border:none; box-shadow:none; padding:0;">
+                    <button class="btn-giant" style="background:#e53e3e; color:white; display:flex; justify-content:center; align-items:center; gap:10px; font-size:1.1rem; border-radius:12px;" onclick="unlockAdminPanel()">
+                        🔒 ورود به بخش مدیریت
+                    </button>
+                </div>
+
+                <!-- پنل ادمین -->
+                <div class="settings-card hidden" id="full-admin-panel" style="border: 2px solid #38a169; background:#f0fff4;">
+                    <h3 style="color:#2f855a; margin-bottom:15px; text-align:center;">✅ داشبورد مدیریت فاتحان آینده</h3>
+                    
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="admin-btn" onclick="adminManageRules()" style="background:#e6fffa; border:1px solid #319795; color:#234e52;">
+                            🎯 مدیریت قوانین امتیازدهی (افزودن / حذف)
+                        </button>
+                        <button class="admin-btn" onclick="addStudentFromAdmin()" style="background:white; border:1px solid #38a169; color:#2f855a;">
+                            ➕ افزودن دانش‌آموز جدید
+                        </button>
+                        <button class="admin-btn" onclick="adminSetAbsent()" style="background:#fff5f5; border:1px solid #fc8181; color:#c53030;">
+                            📋 ثبت غیبت با تاریخ (-۵ امتیاز)
+                        </button>
+                        <button class="admin-btn" onclick="adminDeleteAbsence()" style="background:#fff5f5; border:1px solid #fc8181; color:#c53030;">
+                            🗑️ حذف غیبت‌های ثبت‌شده
+                        </button>
+                        <button class="admin-btn" onclick="adminChangePoints()" style="background:#ebf8ff; border:1px solid #90cdf4; color:#2b6cb0;">
+                            📝 تغییر دستی امتیاز دانش‌آموز
+                        </button>
+                        <button class="admin-btn" onclick="adminEditStudentFull()" style="background:white; border:1px solid #cbd5e0; color:#4a5568;">
+                            ✏️ ویرایش نام یا کلاس دانش‌آموز
+                        </button>
+                        <button class="admin-btn" onclick="deleteStudent()" style="background:#fed7d7; border:1px solid #e53e3e; color:#c53030;">
+                            🗑️ حذف دانش‌آموز از سیستم
+                        </button>
+                        <button class="admin-btn" onclick="resetAllPoints()" style="background:#fbd38d; border:1px solid #dd6b20; color:#744210;">
+                            🔄 ریست کردن تمام امتیازات به ۰
+                        </button>
+                    </div>
+                    
+                    <button class="btn-giant" style="background:transparent; border:2px solid #e53e3e; color:#e53e3e; margin-top:20px;" onclick="lockAdminPanel()">
+                        🔒 بستن پنل مدیریت
+                    </button>
+                </div>
+
+                <button class="btn-giant" style="margin-top:25px; background:#718096; color:white;" onclick="logoutUser()">
+                    🚪 خروج از حساب کاربری
+                </button>
+            </section>
+
+        </main>
+
+        <!-- منوی پایین (فقط ۵ تا تب اصلی) -->
+        <footer class="bottom-nav">
+            <div class="scrollable-menu">
+                <button class="nav-item active" onclick="switchTab('tab-ranking', this)">
+                    <span class="nav-icon">🏆</span>
+                    <span class="nav-text">لیگ</span>
+                </button>
+                <button class="nav-item" onclick="switchTab('tab-attendance', this)">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">غیبت‌ها</span>
+                </button>
+                <button class="nav-item" onclick="switchTab('tab-profile', this)">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">پرونده</span>
+                </button>
+                <button class="nav-item" onclick="switchTab('tab-rules', this)">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-text">قوانین</span>
+                </button>
+                <button class="nav-item" onclick="switchTab('tab-settings', this)">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">تنظیمات</span>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- پاپ‌آپ ادمین -->
+    <div id="custom-admin-modal" class="modal-overlay hidden">
+        <div class="modal-content admin-modal-box">
+            <span class="close-btn" onclick="closeAdminModal()">✖</span>
+            <h3 id="admin-modal-title" style="color:var(--primary-color); margin-bottom:15px; text-align:center;">عنوان عملیات</h3>
+            
+            <div id="modal-select-group" class="modal-search-group">
+                <input type="text" id="modal-search-input" placeholder="🔍 جستجوی سریع نام دانش‌آموز..." oninput="filterModalList()">
+                <div id="modal-student-list" class="modal-student-list"></div>
+            </div>
+
+            <div id="modal-extra-fields" style="margin-top:15px;"></div>
+
+            <button id="modal-submit-btn" class="btn-giant btn-primary" style="margin-top:20px;">ثبت نهایی</button>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="script.js"></script>
+</body>
+</html>

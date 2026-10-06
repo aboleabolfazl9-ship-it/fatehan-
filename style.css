@@ -1,0 +1,623 @@
+/* ==========================================================
+   تم اختصاصی و فوق‌العاده مدرن (Royal Indigo & Pearl Light)
+   طراحی شده به سبک iOS 18 & Material Design 3
+   ========================================================== */
+
+:root {
+    /* رنگ‌های پایه */
+    --bg-body: #f1f5f9;       /* پس‌زمینه ملایم سوپر خوانا */
+    --bg-card: #ffffff;       /* سفید خالص برای کارت‌ها */
+    --text-main: #0f172a;     /* سورمه‌ای تیره برای خوانایی ۱۰۰٪ */
+    --text-muted: #64748b;    /* خاکستری استاندارد */
+    --border-color: #e2e8f0;  /* حاشیه ملایم */
+    
+    /* گرادینت اصلی (بنفش نیلی سلطنتی) */
+    --primary-color: #4f46e5;
+    --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    
+    /* رنگ‌های عملکردی */
+    --success-color: #10b981;  /* سبز زمرّدی */
+    --danger-color: #ef4444;   /* قرمز مرجانی */
+    --warning-color: #f59e0b;  /* طلایی آفتابی */
+    
+    /* سایه‌های سه بعدی و نرم */
+    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    --shadow-hover: 0 20px 25px -5px rgba(79, 70, 229, 0.15), 0 8px 10px -6px rgba(79, 70, 229, 0.1);
+    
+    --radius-md: 16px;
+    --radius-lg: 24px;
+}
+
+/* حالت تاریک اصلاح‌شده و شیک */
+body.dark-mode {
+    --bg-body: #0f172a;
+    --bg-card: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Tahoma, 'Vazirmatn', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.hidden { display: none !important; }
+
+/* =======================================
+   1. صفحه ورود (Login / Register)
+   ======================================= */
+.auth-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.auth-box {
+    background: var(--bg-card);
+    width: 100%;
+    max-width: 400px;
+    border-radius: var(--radius-lg);
+    padding: 35px 25px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-logo {
+    font-size: 3.5rem;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 10px 8px rgba(79, 70, 229, 0.3));
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    color: var(--text-main);
+    margin-bottom: 6px;
+    font-weight: 900;
+}
+
+.auth-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+}
+
+.auth-tabs {
+    display: flex;
+    background: var(--bg-body);
+    border-radius: 30px;
+    padding: 5px;
+    margin-bottom: 20px;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    border-radius: 25px;
+    color: var(--text-muted);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.auth-tab.active {
+    background: var(--bg-card);
+    color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+.input-group {
+    width: 100%;
+    text-align: right;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.input-group input, .input-group select {
+    width: 100% !important;
+    display: block !important;
+    padding: 14px 16px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--bg-body);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus, .input-group select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+    background: var(--bg-card);
+}
+
+/* دکمه‌های آیفونی */
+.btn-giant {
+    width: 100%;
+    min-height: 52px !important;
+    padding: 14px 20px !important;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-primary {
+    background: var(--primary-gradient);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(79, 70, 229, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+
+/* =======================================
+   ۲. فریم اصلی اپلیکیشن (موبایلی وسط‌چین)
+   ======================================= */
+.app-container {
+    width: 100% !important;
+    max-width: 500px !important;
+    margin: 0 auto !important;
+    background: var(--bg-body);
+    min-height: 100vh;
+    position: relative;
+    padding-top: 175px !important; /* جلوگیر از تداخل هدر */
+    padding-bottom: 95px !important;  /* جلوگیری از تداخل منو */
+}
+
+/* هدر چسبان لوکس */
+.app-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 500px !important;
+    z-index: 1000 !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(12px) !important; /* افکت شیشه‌ای iOS */
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-mode .app-header {
+    background: rgba(30, 41, 59, 0.85) !important;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.header-top h2 {
+    font-size: 1.2rem;
+    font-weight: 900;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.badge {
+    background: var(--bg-body);
+    color: var(--primary-color);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-body);
+    color: var(--text-main);
+    outline: none;
+    font-size: 0.9rem;
+    transition: 0.3s;
+}
+
+.search-box input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* فیلتر کلاس‌ها */
+.class-filters {
+    position: fixed !important;
+    top: 112px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 500px !important;
+    z-index: 900 !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    display: flex;
+    gap: 8px;
+    padding: 10px 20px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-mode .class-filters {
+    background: rgba(30, 41, 59, 0.85) !important;
+}
+
+.class-filters::-webkit-scrollbar { display: none; }
+
+.filter-btn {
+    flex-shrink: 0;
+    padding: 8px 18px;
+    border: 1px solid var(--border-color);
+    border-radius: 25px;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn.active {
+    background: var(--primary-gradient);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.app-main-content { padding: 15px 20px; }
+
+.page-title {
+    font-size: 1.15rem;
+    margin-bottom: 18px;
+    padding-right: 12px;
+    border-right: 4px solid var(--primary-color);
+    font-weight: 900;
+}
+
+.page-header-box {
+    background: var(--primary-gradient);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    color: white;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 25px rgba(79, 70, 229, 0.25);
+}
+
+.page-header-box h2 { font-size: 1.25rem; margin-bottom: 6px; font-weight: 900; }
+.page-header-box p { font-size: 0.85rem; opacity: 0.9; }
+
+/* =======================================
+   ۳. کارت‌های رتبه‌بندی لیگ
+   ======================================= */
+.students-container { display: flex; flex-direction: column; gap: 12px; }
+
+.student-card {
+    background: var(--bg-card);
+    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.student-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+.student-info { display: flex; align-items: center; gap: 14px; }
+
+.rank-badge {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--bg-body);
+    display: flex; justify-content: center; align-items: center;
+    font-weight: 900; font-size: 1rem;
+    color: var(--text-muted);
+}
+
+/* مدال‌های سه‌بعدی اول تا سوم */
+.rank-1 {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 6px 15px rgba(245, 158, 11, 0.4);
+}
+.rank-2 {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    color: white;
+    box-shadow: 0 6px 15px rgba(100, 116, 139, 0.3);
+}
+.rank-3 {
+    background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+    color: white;
+    box-shadow: 0 6px 15px rgba(249, 115, 22, 0.3);
+}
+
+.points-badge {
+    background: rgba(79, 70, 229, 0.08);
+    color: var(--primary-color);
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 0.92rem;
+    border: 1px solid rgba(79, 70, 229, 0.15);
+}
+
+/* =======================================
+   ۴. کارت پرونده و بخش تنظیمات
+   ======================================= */
+.profile-card-large, .profile-card {
+    background: var(--bg-card);
+    padding: 30px 20px;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
+}
+
+.profile-avatar {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; margin: 0 auto 15px;
+    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+}
+
+.prof-stats-grid, .prof-stats {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.stat-item, .stat-box {
+    background: var(--bg-body);
+    padding: 16px 10px;
+    border-radius: var(--radius-md);
+    flex: 1;
+    border: 1px solid var(--border-color);
+}
+
+.stat-item span, .stat-box span { font-size: 0.78rem; color: var(--text-muted); font-weight: bold; }
+.stat-item strong, .stat-box strong { display: block; font-size: 1.3rem; color: var(--primary-color); margin-top: 4px; font-weight: 900; }
+
+.settings-card {
+    background: var(--bg-card);
+    padding: 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 14px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
+}
+
+/* دکمه‌های مدیریت خوانا و تپل */
+.admin-btn {
+    width: 100%;
+    min-height: 52px !important;
+    padding: 14px 18px !important;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    font-weight: bold;
+    font-size: 0.92rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: right;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1.4 !important;
+}
+
+.admin-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+/* =======================================
+   ۵. منوی ۱۵ گانه پایینی (شیشه‌ای iOS)
+   ======================================= */
+.bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 500px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(16px) !important;
+    border-top: 1px solid var(--border-color);
+    z-index: 1000 !important;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .bottom-nav {
+    background: rgba(30, 41, 59, 0.9) !important;
+}
+
+.scrollable-menu {
+    display: flex !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding: 10px 6px !important;
+    scrollbar-width: none !important;
+}
+
+.scrollable-menu::-webkit-scrollbar { display: none !important; }
+
+.nav-item {
+    flex: 0 0 auto !important;
+    width: 72px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.68rem !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease;
+}
+
+.nav-item .nav-icon {
+    font-size: 1.35rem !important;
+    margin-bottom: 3px !important;
+    transition: transform 0.2s ease;
+}
+
+.nav-item.active {
+    color: var(--primary-color);
+}
+
+.nav-item.active .nav-icon {
+    transform: scale(1.15) translateY(-2px);
+}
+
+/* =======================================
+   ۶. پاپ‌آپ‌ها و اعلانات
+   ======================================= */
+.toast-container {
+    position: fixed; top: 20px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999; width: 90%; max-width: 400px;
+}
+
+.toast {
+    background: #0f172a; color: white;
+    padding: 14px 20px; border-radius: 14px;
+    text-align: center; font-weight: bold;
+    margin-bottom: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+
+.toast.success { background: #059669; }
+.toast.error { background: #dc2626; }
+
+.modal-overlay {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 10000; padding: 20px;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    width: 100%; max-width: 420px;
+    border-radius: var(--radius-lg);
+    padding: 25px;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+}
+
+.close-btn {
+    position: absolute; top: 18px; left: 18px;
+    cursor: pointer; font-size: 1.2rem;
+    color: var(--text-muted); transition: 0.2s;
+}
+.close-btn:hover { color: var(--danger-color); }
+
+#modal-search-input {
+    width: 100%; padding: 12px 16px;
+    border: 1.5px solid var(--primary-color);
+    border-radius: 12px; background: var(--bg-body);
+    color: var(--text-main); margin-bottom: 12px; outline: none;
+}
+
+.modal-student-list {
+    max-height: 200px; overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 12px; background: var(--bg-body);
+}
+
+.modal-list-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.88rem; transition: 0.2s;
+}
+
+.modal-list-item.selected {
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    font-weight: bold;
+}
+
+.modal-field-input {
+    width: 100%; padding: 12px 14px;
+    border-radius: 12px; border: 1px solid var(--border-color);
+    background: var(--bg-body); color: var(--text-main);
+    margin-top: 6px; margin-bottom: 12px; outline: none;
+}
