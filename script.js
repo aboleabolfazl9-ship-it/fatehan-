@@ -1,8 +1,8 @@
 /* ==========================================================================
-   ۱. دیتابیس ابری زنده (Cloud Sync) + دیتابیس محلی
+   ۱. دیتابیس ابری زنده و اختصاصی مدرسه فاتحان آینده
    ========================================================================== */
-// آدرس دیتابیس ابری زنده مدرسه فاتحان آینده
-const CLOUD_DB_URL = "https://fatehan-ayandeh-default-rtdb.firebaseio.com/schoolData.json";
+// لینک ابری اختصاصی شما در npoint
+const CLOUD_DB_URL = "https://api.npoint.io/2242b94124bd6059fce9";
 
 let db = JSON.parse(localStorage.getItem('smart_school_db')) || [];
 let currentUser = JSON.parse(localStorage.getItem('smart_school_user')) || null;
@@ -17,45 +17,54 @@ let rulesDB = JSON.parse(localStorage.getItem('smart_school_rules')) || [
     { id: 4, title: "کسب نمره ۲۰ در آزمون", amount: 15 }
 ];
 
-// ارسال لحظه‌ای تمام تغییرات (امتیازها، غیبت‌ها و...) به ابر
-function saveDB() {
+// ارسال همزمان و آنی تغییرات نمره/غیبت به سرور ابری
+async function saveDB() {
     localStorage.setItem('smart_school_db', JSON.stringify(db));
     
-    fetch(CLOUD_DB_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(db)
-    }).catch(err => console.log("خطا در ارسال ابری:", err));
+    try {
+        await fetch(CLOUD_DB_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(db)
+        });
+    } catch (e) {
+        console.log("خطا در ارسال آنلاین به سرور");
+    }
 }
 
 function saveRulesDB() {
     localStorage.setItem('smart_school_rules', JSON.stringify(rulesDB));
 }
 
-// دریافت آنلاین و زنده نمره‌ها از اینترنت
+// دریافت زنده اطلاعات آنلاین از سرور ابری
 async function syncFromCloud() {
     try {
         const response = await fetch(CLOUD_DB_URL);
-        const cloudData = await response.json();
-        
-        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-            db = cloudData;
-            localStorage.setItem('smart_school_db', JSON.stringify(db));
+        if (response.ok) {
+            const cloudData = await response.json();
             
-            // اگر پاپ‌آپ ادمین باز نبود، صفحه رو زنده آپدیت کن
-            if (!selectedStudentIdForModal) {
-                renderStudents();
-                fillProfile();
-                renderAbsences();
+            // اگر سرور ابری پر بود، اطلاعات آنلاین رو جایگزین کن
+            if (Array.isArray(cloudData) && cloudData.length > 0) {
+                db = cloudData;
+                localStorage.setItem('smart_school_db', JSON.stringify(db));
+                if (!selectedStudentIdForModal) {
+                    renderStudents();
+                    fillProfile();
+                    renderAbsences();
+                }
+            } 
+            // اگر سرور ابری خالی بود، دیتای اولیه ۸۶ نفر رو بفرست رو سرور
+            else if (Array.isArray(cloudData) && cloudData.length === 0 && db.length > 0) {
+                saveDB();
             }
         }
     } catch (e) {
-        console.log("دریافت آفلاین انجام شد.");
+        console.log("استفاده از حافظه محلی");
     }
 }
 
 /* ==========================================================================
-   ۲. اعلانات موقت (Toast)
+   ۲. سیستم اعلانات و پیام‌های توست (Toast)
    ========================================================================== */
 function showToast(message, type = 'success') {
     const toastContainer = document.getElementById('toast-container');
@@ -189,25 +198,22 @@ function renderStudents(searchQuery = '') {
     });
 }
 
-// کسر/اضافه کردن آنلاین امتیازات با ذخیره آنی
 function customScore(studentId, actionType) {
     if (!isAdmin) return showToast('فقط مدیر می‌تواند امتیاز تغییر دهد!', 'error');
     const student = db.find(s => s.id === studentId);
     if (!student) return;
 
-    let inputStr = prompt(actionType === 'add' ? `چند امتیاز به ${student.name} اضافه شود؟` : `چند امتیاز از ${student.name} کم شود؟`);
+    let inputStr = prompt(actionType === 'add' ? `چند امتیاز اضافه شود؟` : `چند امتیاز کم شود؟`);
     if (!inputStr || inputStr.trim() === "") return;
 
     let amount = Number(inputStr);
     if (isNaN(amount) || amount <= 0) return showToast('عدد نامعتبر!', 'error');
 
     let pts = Number(student.points) || 0;
-    if (actionType === 'add') { student.points = pts + amount; showToast(`${amount}+ امتیاز به ${student.name} ثبت شد ✅`, 'success'); } 
-    else { student.points = Math.max(0, pts - amount); showToast(`${amount}- امتیاز از ${student.name} کسر شد ❌`, 'error'); }
+    if (actionType === 'add') { student.points = pts + amount; showToast(`ثبت شد ✅`, 'success'); } 
+    else { student.points = Math.max(0, pts - amount); showToast(`ثبت شد ❌`, 'error'); }
 
-    saveDB(); // ارسال آنی به سرور ابری
-    renderStudents(); 
-    fillProfile();
+    saveDB(); renderStudents(); fillProfile();
 }
 
 function viewStudentProfile(studentId) {
@@ -240,7 +246,7 @@ function fillProfile() {
 }
 
 /* ==========================================================================
-   ۵. سیستم غیبت‌ها
+   ۵. سیستم عمومی غیبت‌ها
    ========================================================================== */
 function renderAbsences() {
     const container = document.getElementById('my-absences-list');
@@ -291,7 +297,10 @@ function deleteAbsence(studentId, index) {
     const student = db.find(s => s.id === studentId);
     if(student && student.absences && student.absences[index] !== undefined) {
         student.absences.splice(index, 1);
-        saveDB(); renderAbsences(); renderStudents(); fillProfile();
+        saveDB();
+        renderAbsences();
+        renderStudents();
+        fillProfile();
         showToast(`غیبت ${student.name} حذف شد ✅`, 'success');
     }
 }
@@ -447,6 +456,7 @@ function adminSetAbsent() {
         const student = db.find(s => s.id === selectedStudentIdForModal);
         if (student) {
             if(!student.absences || !Array.isArray(student.absences)) student.absences = [];
+            
             student.absences.push(dateVal);
             student.present = false; 
             student.points = Math.max(0, (Number(student.points) || 0) - 5);
@@ -460,6 +470,7 @@ function adminSetAbsent() {
 
 function adminDeleteAbsence() {
     if (!isAdmin) return showToast('اول وارد مدیریت شو!', 'error');
+    
     selectedStudentIdForModal = null;
     document.getElementById('admin-modal-title').innerText = "🗑️ حذف غیبت‌های ثبت‌شده";
     document.getElementById('modal-select-group').style.display = "block";
@@ -469,6 +480,7 @@ function adminDeleteAbsence() {
         <p style="text-align:center; color:gray; font-size:0.85rem; margin-bottom:10px;">دانش‌آموز را انتخاب کنید:</p>
         <div id="absence-list-container"></div>
     `;
+    
     populateModalList();
     
     window.showStudentAbsences = function(studentId) {
@@ -630,7 +642,7 @@ function resetAllPoints() {
 function adminEditStudent() { adminEditStudentFull(); }
 
 /* ==========================================================================
-   ۸. دیتابیس ۸۶ دانش‌آموز + راه‌اندازی با همگام‌سازی آنلاین
+   ۸. دیتابیس ۸۶ دانش‌آموز + راه‌اندازی با همگام‌سازی ابری زنده
    ========================================================================== */
 const fullSchoolData = [
     { id: 701, phone: "09100000701", pass: "1234", name: "محمد اکرمی ابرقوئی", class: "هفتم", points: 950, present: true, behavior: "عالی", absences: [] },
@@ -673,7 +685,7 @@ const fullSchoolData = [
     { id: 8117, phone: "09100008117", pass: "1234", name: "ایلیا کاظمی احمدآبادی", class: "هشتم ۱", points: 965, present: true, behavior: "عالی", absences: [] },
     { id: 8118, phone: "09100008118", pass: "1234", name: "علی کشاورز", class: "هشتم ۱", points: 880, present: true, behavior: "عالی", absences: [] },
     { id: 8119, phone: "09100008119", pass: "1234", name: "حسین محمدی", class: "هشتم ۱", points: 900, present: true, behavior: "عالی", absences: [] },
-    { id: 8120, phone: "09100008120", pass: "1234", name: "محمدحسین مشکین فام فرد", class: "هشتم ۱", points: 870, present: true, behavior: "خوب", absences: [] },
+    { id: 8120, phone: "09100008200", pass: "1234", name: "محمدحسین مشکین فام فرد", class: "هشتم ۱", points: 870, present: true, behavior: "خوب", absences: [] },
     { id: 8121, phone: "09100008121", pass: "1234", name: "سیدمحمدباقر نبوی زاده", class: "هشتم ۱", points: 910, present: true, behavior: "عالی", absences: [] },
 
     { id: 8201, phone: "09100008201", pass: "1234", name: "متین احمدی چنارفاریابی", class: "هشتم ۲", points: 950, present: true, behavior: "عالی", absences: [] },
@@ -765,12 +777,12 @@ function toggleTheme() {
     }
 }
 
-// چک کردن دیتابیس ابری زنده
+// چک کردن آنلاین زنده
 window.addEventListener('DOMContentLoaded', () => {
     removeDuplicateStudents();
-    syncFromCloud(); // خواندن زنده از اینترنت
+    syncFromCloud();
     
-    // هماهنگی زنده هر ۳ ثانیه یکبار (Auto Live-Sync)
+    // هر ۳ ثانیه خودکار سرور رو چک می‌کنه
     setInterval(syncFromCloud, 3000);
     
     if (localStorage.getItem('theme') === 'dark') {
