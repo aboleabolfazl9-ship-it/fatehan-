@@ -1,7 +1,7 @@
 /* ==========================================================================
    ۱. دیتابیس ابری زنده (Cloud Sync) + دیتابیس محلی
    ========================================================================== */
-// آدرس اختصاصی دیتابیس ابری مدرسه فاتحان آینده
+// آدرس دیتابیس ابری زنده مدرسه فاتحان آینده
 const CLOUD_DB_URL = "https://fatehan-ayandeh-default-rtdb.firebaseio.com/schoolData.json";
 
 let db = JSON.parse(localStorage.getItem('smart_school_db')) || [];
@@ -17,23 +17,22 @@ let rulesDB = JSON.parse(localStorage.getItem('smart_school_rules')) || [
     { id: 4, title: "کسب نمره ۲۰ در آزمون", amount: 15 }
 ];
 
-// تابع ذخیره همزمان در حافظه گوشی و دیتابیس ابری آنلاین
+// ارسال لحظه‌ای تمام تغییرات (امتیازها، غیبت‌ها و...) به ابر
 function saveDB() {
     localStorage.setItem('smart_school_db', JSON.stringify(db));
     
-    // ارسال آنلاین به سرور ابری برای همگام‌سازی بین گوشی و کامپیوتر
     fetch(CLOUD_DB_URL, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(db)
-    }).catch(err => console.log("خطا در همگام‌سازی ابری:", err));
+    }).catch(err => console.log("خطا در ارسال ابری:", err));
 }
 
 function saveRulesDB() {
     localStorage.setItem('smart_school_rules', JSON.stringify(rulesDB));
 }
 
-// دریافت آخرین اطلاعات زنده از اینترنت موقع باز شدن سایت
+// دریافت آنلاین و زنده نمره‌ها از اینترنت
 async function syncFromCloud() {
     try {
         const response = await fetch(CLOUD_DB_URL);
@@ -42,17 +41,21 @@ async function syncFromCloud() {
         if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
             db = cloudData;
             localStorage.setItem('smart_school_db', JSON.stringify(db));
-            renderStudents();
-            fillProfile();
-            renderAbsences();
+            
+            // اگر پاپ‌آپ ادمین باز نبود، صفحه رو زنده آپدیت کن
+            if (!selectedStudentIdForModal) {
+                renderStudents();
+                fillProfile();
+                renderAbsences();
+            }
         }
     } catch (e) {
-        console.log("دریافت آفلاین از حافظه دستگاه انجام شد.");
+        console.log("دریافت آفلاین انجام شد.");
     }
 }
 
 /* ==========================================================================
-   ۲. سیستم اعلانات و پیام‌های پاپ‌آپ موقت (Toast Notifications)
+   ۲. اعلانات موقت (Toast)
    ========================================================================== */
 function showToast(message, type = 'success') {
     const toastContainer = document.getElementById('toast-container');
@@ -69,7 +72,7 @@ function showToast(message, type = 'success') {
 }
 
 /* ==========================================================================
-   ۳. سیستم ورود، ثبت‌نام و خروج
+   ۳. ورود، ثبت‌نام و خروج
    ========================================================================== */
 function switchAuth(type) {
     const tabs = document.querySelectorAll('.auth-tab');
@@ -186,22 +189,25 @@ function renderStudents(searchQuery = '') {
     });
 }
 
+// کسر/اضافه کردن آنلاین امتیازات با ذخیره آنی
 function customScore(studentId, actionType) {
     if (!isAdmin) return showToast('فقط مدیر می‌تواند امتیاز تغییر دهد!', 'error');
     const student = db.find(s => s.id === studentId);
     if (!student) return;
 
-    let inputStr = prompt(actionType === 'add' ? `چند امتیاز اضافه شود؟` : `چند امتیاز کم شود؟`);
+    let inputStr = prompt(actionType === 'add' ? `چند امتیاز به ${student.name} اضافه شود؟` : `چند امتیاز از ${student.name} کم شود؟`);
     if (!inputStr || inputStr.trim() === "") return;
 
     let amount = Number(inputStr);
     if (isNaN(amount) || amount <= 0) return showToast('عدد نامعتبر!', 'error');
 
     let pts = Number(student.points) || 0;
-    if (actionType === 'add') { student.points = pts + amount; showToast(`ثبت شد ✅`, 'success'); } 
-    else { student.points = Math.max(0, pts - amount); showToast(`ثبت شد ❌`, 'error'); }
+    if (actionType === 'add') { student.points = pts + amount; showToast(`${amount}+ امتیاز به ${student.name} ثبت شد ✅`, 'success'); } 
+    else { student.points = Math.max(0, pts - amount); showToast(`${amount}- امتیاز از ${student.name} کسر شد ❌`, 'error'); }
 
-    saveDB(); renderStudents(); fillProfile();
+    saveDB(); // ارسال آنی به سرور ابری
+    renderStudents(); 
+    fillProfile();
 }
 
 function viewStudentProfile(studentId) {
@@ -234,7 +240,7 @@ function fillProfile() {
 }
 
 /* ==========================================================================
-   ۵. سیستم عمومی غیبت‌ها (نمایش زنده برای اولیا)
+   ۵. سیستم غیبت‌ها
    ========================================================================== */
 function renderAbsences() {
     const container = document.getElementById('my-absences-list');
@@ -285,17 +291,12 @@ function deleteAbsence(studentId, index) {
     const student = db.find(s => s.id === studentId);
     if(student && student.absences && student.absences[index] !== undefined) {
         student.absences.splice(index, 1);
-        saveDB();
-        renderAbsences();
-        renderStudents();
-        fillProfile();
+        saveDB(); renderAbsences(); renderStudents(); fillProfile();
         showToast(`غیبت ${student.name} حذف شد ✅`, 'success');
     }
 }
 
-function deleteSpecificAbsence(studentId, index) {
-    deleteAbsence(studentId, index);
-}
+function deleteSpecificAbsence(studentId, index) { deleteAbsence(studentId, index); }
 
 /* ==========================================================================
    ۶. قوانین امتیازگیری
@@ -367,7 +368,7 @@ function submitDeleteRule() {
 }
 
 /* ==========================================================================
-   ۷. پاپ‌آپ مدیریت و ادمین (عملیات اصلی)
+   ۷. پاپ‌آپ مدیریت و ادمین
    ========================================================================== */
 function unlockAdminPanel() {
     const pass = prompt("🔒 لطفاً رمز عبور مدیریت را وارد کنید:");
@@ -446,7 +447,6 @@ function adminSetAbsent() {
         const student = db.find(s => s.id === selectedStudentIdForModal);
         if (student) {
             if(!student.absences || !Array.isArray(student.absences)) student.absences = [];
-            
             student.absences.push(dateVal);
             student.present = false; 
             student.points = Math.max(0, (Number(student.points) || 0) - 5);
@@ -460,7 +460,6 @@ function adminSetAbsent() {
 
 function adminDeleteAbsence() {
     if (!isAdmin) return showToast('اول وارد مدیریت شو!', 'error');
-    
     selectedStudentIdForModal = null;
     document.getElementById('admin-modal-title').innerText = "🗑️ حذف غیبت‌های ثبت‌شده";
     document.getElementById('modal-select-group').style.display = "block";
@@ -470,7 +469,6 @@ function adminDeleteAbsence() {
         <p style="text-align:center; color:gray; font-size:0.85rem; margin-bottom:10px;">دانش‌آموز را انتخاب کنید:</p>
         <div id="absence-list-container"></div>
     `;
-    
     populateModalList();
     
     window.showStudentAbsences = function(studentId) {
@@ -632,7 +630,7 @@ function resetAllPoints() {
 function adminEditStudent() { adminEditStudentFull(); }
 
 /* ==========================================================================
-   ۸. دیتابیس ۸۶ دانش‌آموز + راه‌اندازی اولیه و دریافت همزمان دیتابیس ابری
+   ۸. دیتابیس ۸۶ دانش‌آموز + راه‌اندازی با همگام‌سازی آنلاین
    ========================================================================== */
 const fullSchoolData = [
     { id: 701, phone: "09100000701", pass: "1234", name: "محمد اکرمی ابرقوئی", class: "هفتم", points: 950, present: true, behavior: "عالی", absences: [] },
@@ -767,10 +765,13 @@ function toggleTheme() {
     }
 }
 
-// همگام‌سازی ابری موقع لود اولیه
+// چک کردن دیتابیس ابری زنده
 window.addEventListener('DOMContentLoaded', () => {
     removeDuplicateStudents();
-    syncFromCloud(); // دریافت اطلاعات زنده از سرور ابری
+    syncFromCloud(); // خواندن زنده از اینترنت
+    
+    // هماهنگی زنده هر ۳ ثانیه یکبار (Auto Live-Sync)
+    setInterval(syncFromCloud, 3000);
     
     if (localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark-mode');
