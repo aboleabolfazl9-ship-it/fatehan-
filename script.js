@@ -1,6 +1,9 @@
 /* ==========================================================================
-   ۱. دیتابیس، متغیرهای سراسری و مدیریت حافظه
+   ۱. دیتابیس ابری زنده (Cloud Sync) + دیتابیس محلی
    ========================================================================== */
+// آدرس اختصاصی دیتابیس ابری مدرسه فاتحان آینده
+const CLOUD_DB_URL = "https://fatehan-ayandeh-default-rtdb.firebaseio.com/schoolData.json";
+
 let db = JSON.parse(localStorage.getItem('smart_school_db')) || [];
 let currentUser = JSON.parse(localStorage.getItem('smart_school_user')) || null;
 let currentClassFilter = 'all';
@@ -14,9 +17,43 @@ let rulesDB = JSON.parse(localStorage.getItem('smart_school_rules')) || [
     { id: 4, title: "کسب نمره ۲۰ در آزمون", amount: 15 }
 ];
 
-function saveDB() { localStorage.setItem('smart_school_db', JSON.stringify(db)); }
-function saveRulesDB() { localStorage.setItem('smart_school_rules', JSON.stringify(rulesDB)); }
+// تابع ذخیره همزمان در حافظه گوشی و دیتابیس ابری آنلاین
+function saveDB() {
+    localStorage.setItem('smart_school_db', JSON.stringify(db));
+    
+    // ارسال آنلاین به سرور ابری برای همگام‌سازی بین گوشی و کامپیوتر
+    fetch(CLOUD_DB_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(db)
+    }).catch(err => console.log("خطا در همگام‌سازی ابری:", err));
+}
 
+function saveRulesDB() {
+    localStorage.setItem('smart_school_rules', JSON.stringify(rulesDB));
+}
+
+// دریافت آخرین اطلاعات زنده از اینترنت موقع باز شدن سایت
+async function syncFromCloud() {
+    try {
+        const response = await fetch(CLOUD_DB_URL);
+        const cloudData = await response.json();
+        
+        if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+            db = cloudData;
+            localStorage.setItem('smart_school_db', JSON.stringify(db));
+            renderStudents();
+            fillProfile();
+            renderAbsences();
+        }
+    } catch (e) {
+        console.log("دریافت آفلاین از حافظه دستگاه انجام شد.");
+    }
+}
+
+/* ==========================================================================
+   ۲. سیستم اعلانات و پیام‌های پاپ‌آپ موقت (Toast Notifications)
+   ========================================================================== */
 function showToast(message, type = 'success') {
     const toastContainer = document.getElementById('toast-container');
     if (!toastContainer) return;
@@ -25,11 +62,14 @@ function showToast(message, type = 'success') {
     const icon = type === 'success' ? '✅' : '❌';
     toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
     toastContainer.appendChild(toast);
-    setTimeout(() => { toast.style.animation = 'slideDown 0.4s reverse forwards'; setTimeout(() => toast.remove(), 400); }, 3000);
+    setTimeout(() => {
+        toast.style.animation = 'slideDown 0.4s reverse forwards';
+        setTimeout(() => toast.remove(), 400);
+    }, 3000);
 }
 
 /* ==========================================================================
-   ۲. سیستم ورود، ثبت‌نام و خروج
+   ۳. سیستم ورود، ثبت‌نام و خروج
    ========================================================================== */
 function switchAuth(type) {
     const tabs = document.querySelectorAll('.auth-tab');
@@ -110,7 +150,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 document.getElementById('search-input').addEventListener('input', function(e) { renderStudents(e.target.value.toLowerCase().trim()); });
 
 /* ==========================================================================
-   ۳. رندر لیست اصلی و پرونده
+   ۴. رندر لیست اصلی و پرونده
    ========================================================================== */
 function renderStudents(searchQuery = '') {
     const container = document.getElementById('students-container');
@@ -194,7 +234,7 @@ function fillProfile() {
 }
 
 /* ==========================================================================
-   ۴. سیستم عمومی غیبت‌ها (بدون اضافه کردن امتیاز موقع حذف غیبت)
+   ۵. سیستم عمومی غیبت‌ها (نمایش زنده برای اولیا)
    ========================================================================== */
 function renderAbsences() {
     const container = document.getElementById('my-absences-list');
@@ -240,13 +280,11 @@ function renderAbsences() {
     container.innerHTML = html;
 }
 
-// 🛠️ اصلاح شد: حذف غیبت بدون اضافه کردن ۵ امتیاز!
 function deleteAbsence(studentId, index) {
     if(!isAdmin) return;
     const student = db.find(s => s.id === studentId);
     if(student && student.absences && student.absences[index] !== undefined) {
         student.absences.splice(index, 1);
-        // هیچی به student.points اضافه نمیشه!
         saveDB();
         renderAbsences();
         renderStudents();
@@ -260,7 +298,7 @@ function deleteSpecificAbsence(studentId, index) {
 }
 
 /* ==========================================================================
-   ۵. قوانین امتیازگیری
+   ۶. قوانین امتیازگیری
    ========================================================================== */
 function renderRules() {
     const container = document.getElementById('rules-container');
@@ -329,7 +367,7 @@ function submitDeleteRule() {
 }
 
 /* ==========================================================================
-   ۶. پاپ‌آپ مدیریت و ادمین
+   ۷. پاپ‌آپ مدیریت و ادمین (عملیات اصلی)
    ========================================================================== */
 function unlockAdminPanel() {
     const pass = prompt("🔒 لطفاً رمز عبور مدیریت را وارد کنید:");
@@ -380,7 +418,6 @@ function closeAdminModal() {
     if(document.getElementById('modal-search-input')) document.getElementById('modal-search-input').value = '';
 }
 
-// ثبت غیبت با دریافت تاریخ و کسر ۵ امتیاز
 function adminSetAbsent() {
     if (!isAdmin) return showToast('اول وارد مدیریت شو!', 'error');
     selectedStudentIdForModal = null;
@@ -412,7 +449,7 @@ function adminSetAbsent() {
             
             student.absences.push(dateVal);
             student.present = false; 
-            student.points = Math.max(0, (Number(student.points) || 0) - 5); // فقط کسر ۵ امتیاز
+            student.points = Math.max(0, (Number(student.points) || 0) - 5);
             
             saveDB(); renderStudents(); fillProfile(); renderAbsences(); closeAdminModal();
             showToast(`غیبت برای ${student.name} ثبت شد ❌`, 'error');
@@ -421,7 +458,6 @@ function adminSetAbsent() {
     document.getElementById('custom-admin-modal').classList.remove('hidden');
 }
 
-// حذف غیبت از طریق پاپ‌آپ مدیریت بدون اضافه شدن امتیاز
 function adminDeleteAbsence() {
     if (!isAdmin) return showToast('اول وارد مدیریت شو!', 'error');
     
@@ -443,16 +479,16 @@ function adminDeleteAbsence() {
         if(!container) return;
         
         if (!student || !student.absences || student.absences.length === 0) {
-            container.innerHTML = `<div style="background:#f0fff4; padding:12px; border-radius:10px; text-align:center; color:#2f855a; font-weight:bold;">این دانش‌آموز هیچ غیبتی ندارد ✅</div>`;
+            container.innerHTML = `<div style="background:var(--bg-card); padding:12px; border-radius:10px; text-align:center; color:var(--success-color); font-weight:bold;">این دانش‌آموز هیچ غیبتی ندارد ✅</div>`;
             return;
         }
         
         let html = `<div style="margin-top:10px;"><strong style="display:block; margin-bottom:8px;">غیبت‌های ${student.name}:</strong>`;
         student.absences.forEach((date, index) => {
             html += `
-                <div style="background:#fff5f5; padding:10px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid #fed7d7;">
-                    <span style="color:#c53030; font-weight:bold; font-size:0.85rem;">📅 ${date}</span>
-                    <button onclick="deleteAbsence(${student.id}, ${index})" style="background:#e53e3e; color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold;">حذف غیبت</button>
+                <div style="background:var(--bg-card); padding:10px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-color);">
+                    <span style="color:var(--danger-color); font-weight:bold; font-size:0.85rem;">📅 ${date}</span>
+                    <button onclick="deleteAbsence(${student.id}, ${index})" style="background:#fed7d7; color:#c53030; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold;">حذف غیبت</button>
                 </div>
             `;
         });
@@ -596,7 +632,7 @@ function resetAllPoints() {
 function adminEditStudent() { adminEditStudentFull(); }
 
 /* ==========================================================================
-   ۷. دیتابیس ۸۶ دانش‌آموز + راه‌اندازی
+   ۸. دیتابیس ۸۶ دانش‌آموز + راه‌اندازی اولیه و دریافت همزمان دیتابیس ابری
    ========================================================================== */
 const fullSchoolData = [
     { id: 701, phone: "09100000701", pass: "1234", name: "محمد اکرمی ابرقوئی", class: "هفتم", points: 950, present: true, behavior: "عالی", absences: [] },
@@ -731,8 +767,10 @@ function toggleTheme() {
     }
 }
 
+// همگام‌سازی ابری موقع لود اولیه
 window.addEventListener('DOMContentLoaded', () => {
     removeDuplicateStudents();
+    syncFromCloud(); // دریافت اطلاعات زنده از سرور ابری
     
     if (localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark-mode');
