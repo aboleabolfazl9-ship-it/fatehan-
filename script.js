@@ -36,30 +36,29 @@ function saveRulesDB() {
     localStorage.setItem('smart_school_rules', JSON.stringify(rulesDB));
 }
 
-// دریافت زنده اطلاعات آنلاین از سرور ابری
+// نسخه ضدِ صفحه سفید برای برنامه اندروید
 async function syncFromCloud() {
+    // اول لیست رو از حافظه خود گوشی لود کن که صفحه سفید نمونه
+    if (db.length > 0) {
+        renderStudents();
+        fillProfile();
+        renderAbsences();
+    }
+
     try {
         const response = await fetch(CLOUD_DB_URL);
         if (response.ok) {
             const cloudData = await response.json();
-            
-            // اگر سرور ابری پر بود، اطلاعات آنلاین رو جایگزین کن
             if (Array.isArray(cloudData) && cloudData.length > 0) {
                 db = cloudData;
                 localStorage.setItem('smart_school_db', JSON.stringify(db));
-                if (!selectedStudentIdForModal) {
-                    renderStudents();
-                    fillProfile();
-                    renderAbsences();
-                }
-            } 
-            // اگر سرور ابری خالی بود، دیتای اولیه ۸۶ نفر رو بفرست رو سرور
-            else if (Array.isArray(cloudData) && cloudData.length === 0 && db.length > 0) {
-                saveDB();
+                renderStudents();
+                fillProfile();
+                renderAbsences();
             }
         }
     } catch (e) {
-        console.log("استفاده از حافظه محلی");
+        console.log("خطا در همگام‌سازی، برنامه از حافظه داخلی استفاده کرد.");
     }
 }
 
